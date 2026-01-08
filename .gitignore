@@ -1,0 +1,5 @@
+.env
+config*.yml
+.VS_Code
+.DS_Store
+.idea

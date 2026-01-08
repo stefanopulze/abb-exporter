@@ -1,0 +1,10 @@
+# @name info
+GET http://localhost:8080/api/meter/enel/info
+
+###
+# @name usage-status
+GET http://localhost:8080/api/meter/enel/usage-status
+
+###
+# @name total active power
+GET http://localhost:8080/api/meter/enel/total-active-power
