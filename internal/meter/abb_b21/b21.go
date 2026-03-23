@@ -83,7 +83,7 @@ func (c Client) QueryUsageStatus() (*meter.UsageStatus, error) {
 	frequencyRounded := math.Floor(float64(frequency[0])*0.01*100) / 100
 
 	reg := meter.UsageStatus{
-		Timestamp:   time.Now(),
+		Timestamp:   time.Now().UTC(),
 		Voltage:     voltageRounded,
 		Current:     currentRounded,
 		ActivePower: powerRounded,

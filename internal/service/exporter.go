@@ -7,31 +7,49 @@ import (
 	"log/slog"
 )
 
+const logMaxReadFails = 3
+
 func NewExporter(exporters []exporter.Exporter, meters []meter.Meter) *Exporter {
+	readFails := map[int]int{}
+	for i := range meters {
+		readFails[i] = 0
+	}
+
 	return &Exporter{
 		exporters: exporters,
 		meters:    meters,
+		readFails: readFails,
 	}
 }
 
 type Exporter struct {
 	meters    []meter.Meter
 	exporters []exporter.Exporter
+	readFails map[int]int
 }
 
 func (e Exporter) QueryAndExportMetrics() {
 	var data *meter.UsageStatus
 	var err error
-	for _, m := range e.meters {
-		data, err = m.QueryUsageStatus()
+	for i := range e.meters {
+		data, err = e.meters[i].QueryUsageStatus()
 		if err != nil {
-			slog.Error(fmt.Sprintf("cannot read registries on %s: %v", m.Name(), err))
+			if e.readFails[i] >= logMaxReadFails {
+				continue
+			}
+
+			e.readFails[i]++
+			slog.Error(fmt.Sprintf("cannot read registries on %s: %v", e.meters[i].Name(), err))
 			continue
 		}
 
-		go func(d *meter.UsageStatus) {
-			_ = e.Export(d, m.Tags())
-		}(data)
+		e.readFails[i] = 0
+		go func() {
+			err = e.Export(data, e.meters[i].Tags())
+			if err != nil {
+				slog.Error(fmt.Sprintf("cannot export data: %v", err))
+			}
+		}()
 	}
 }
 
